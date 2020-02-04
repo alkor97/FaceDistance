@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_margin="4dp"
+    tools:context=".MainActivity">
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/text_distance_between_eyes"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/edit_distance_between_eyes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/distance_between_eyes"
+            android:inputType="number" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/text_face_distance_threshold"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/text_distance_between_eyes">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/edit_face_distance_threshold"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/face_distance_threshold"
+            android:inputType="number" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/text_measurement_period"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/text_face_distance_threshold">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/edit_measurement_period"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/measurement_period" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/text_last_checked"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/text_measurement_period">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/edit_last_checked"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:enabled="false"
+            android:hint="@string/last_checked"
+            android:inputType="time" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <Switch
+        android:id="@+id/switch_enable_alarm"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/alarm_scheduled"
+        android:textSize="18sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/text_last_checked" />
+
+    <Switch
+        android:id="@+id/switch_register_listener"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:clickable="false"
+        android:text="@string/user_observer_registered"
+        android:textSize="18sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/switch_enable_alarm" />
+
+    <TextView
+        android:id="@+id/text_face_distance"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/face_distance_unknown"
+        android:textSize="24sp"
+        android:visibility="visible"
+        app:layout_constraintEnd_toStartOf="@+id/progress_measuring"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/switch_register_listener" />
+
+    <ProgressBar
+        android:id="@+id/progress_measuring"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:visibility="invisible"
+        android:indeterminateOnly="true"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/switch_register_listener"
+        app:layout_constraintBottom_toBottomOf="@+id/text_face_distance"
+        app:layout_constraintStart_toEndOf="@+id/text_face_distance" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

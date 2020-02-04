@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Face Distance Detector</string>
+    <string name="ok">OK</string>
+    <string name="permission_camera_rationale">Access to the camera is needed for detection</string>
+    <string name="no_camera_permission">This application cannot run because it does not have the camera permission.  The application will now exit.</string>
+    <string name="user_observer_registered">User observer registered</string>
+    <string name="alarm_scheduled">Alarm scheduled</string>
+    <string name="face_distance_is">Your face is %1$d mm from screen.</string>
+    <string name="face_distance_unknown">Your face distance is not yet known.</string>
+    <string name="distance_between_eyes">Distance between eyes (mm)</string>
+    <string name="face_distance_threshold">Face distance threshold (mm)</string>
+    <string name="measurement_period">Measurement period (seconds)</string>
+    <string name="last_checked">Last checked</string>
+</resources>
