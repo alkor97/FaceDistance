@@ -2,14 +2,15 @@ package info.alkor.facedistance
 
 import android.content.Context
 import android.content.res.Configuration
-import android.os.Build
 import android.os.Vibrator
 import android.util.Log
 import java.util.concurrent.atomic.AtomicBoolean
 
 class FaceDistanceManager(private val context: Context,
                           private val postFaceDistance: (Int) -> Unit,
-                          private val postIsMeasuring: (Boolean) -> Unit) {
+                          private val postIsMeasuring: (Boolean) -> Unit,
+                          private val statistics: Statistics
+) {
 
     private val tag = "fdm"
 
@@ -35,6 +36,9 @@ class FaceDistanceManager(private val context: Context,
             if (faceDistanceMm < faceToScreenDistanceThresholdMm) {
                 Log.w(tag, "Your face is too close to screen! Move away!")
                 vibrator.vibrate(longArrayOf(0, 250, 100, 250, 100, 250, 100, 250, 100, 250, 100), -1)
+                statistics.measurementTaken(true)
+            } else {
+                statistics.measurementTaken(false)
             }
         } else {
             Log.d(tag, "Unable to measure face-to-screen distance!")

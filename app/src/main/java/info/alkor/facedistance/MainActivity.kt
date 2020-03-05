@@ -19,7 +19,6 @@ import com.google.android.material.snackbar.Snackbar
 import java.text.DateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
-import java.util.function.Consumer
 
 class MainActivity : AppCompatActivity() {
 
@@ -35,6 +34,7 @@ class MainActivity : AppCompatActivity() {
     private val distanceThresholdEdit by lazy { findViewById<EditText>(R.id.edit_face_distance_threshold) }
     private val measurementPeriodEdit by lazy { findViewById<EditText>(R.id.edit_measurement_period) }
     private val lastCheckedEdit by lazy { findViewById<EditText>(R.id.edit_last_checked) }
+    private val statisticsText by lazy { findViewById<TextView>(R.id.statistics) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,6 +63,13 @@ class MainActivity : AppCompatActivity() {
 
         setupOnIntChanged(measurementPeriodEdit) { appContext().measuringPeriod = Timeout(it.toLong(), TimeUnit.SECONDS) }
         initIntEditor(measurementPeriodEdit) { appContext().measuringPeriod.toSeconds().toInt() }
+
+        installObserver(appContext().statistics) {
+            statisticsText.text = String.format(
+                "Too close to screen for %d%% of time (%d out of %d measurements).",
+                100 * it.tooCloseCount / it.count, it.tooCloseCount, it.count
+            )
+        }
     }
 
     private fun registerUserStatusReceiver(enable: Boolean) {

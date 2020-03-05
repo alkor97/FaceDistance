@@ -33,12 +33,14 @@ class MyApplication : Application() {
     val alarmEnabled = MutableLiveData<Boolean>()
     val faceDistance = MutableLiveData<Int>()
     val isMeasuring = MutableLiveData<Boolean>()
+    val statistics = MutableLiveData<StatisticsEntry>()
 
     private val userStatusReceiver = UserStatusReceiver { userObserverEnabled.postValue(it) }
     private val alarmManager = PeriodicAlarmManager(this) { alarmEnabled.postValue(it) }
     private val faceDistanceManager = FaceDistanceManager(this,
         { faceDistance.postValue(it) },
-        { isMeasuring.postValue(it) }
+        { isMeasuring.postValue(it) },
+        Statistics { statistics.postValue(it) }
     )
 
     private val handler = Handler(Looper.getMainLooper())
