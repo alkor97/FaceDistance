@@ -1,21 +1,39 @@
 package info.alkor.facedistance
 
-class Statistics(private val reporter: StatisticsReporter) {
+import android.content.Context
 
-    private var count = 0
-    private var tooCloseCount = 0
+class Statistics(context: Context, private val reporter: StatisticsReporter) : SimpleStorage(context, "statistics") {
+
+    companion object {
+        private const val key_totalMeasurementCount = "totalMeasurementCount"
+        private const val key_tooCloseMeasurementCount = "tooCloseMeasurementCount"
+    }
+
+    fun setTotalMeasurementCount(value: Int) = writeInt(key_totalMeasurementCount, value)
+    fun getTotalMeasurementCount() = readInt(key_totalMeasurementCount, 0)
+
+    fun setTotalTooCloseMeasurementCount(value: Int) = writeInt(key_tooCloseMeasurementCount, value)
+    fun getTooCloseMeasurementCount() = readInt(key_tooCloseMeasurementCount, 0)
 
     fun measurementTaken(tooClose: Boolean) {
-        ++count
-        if (tooClose) {
-            ++tooCloseCount
-        }
-        reporter(StatisticsEntry(count, tooCloseCount))
+        val totalCount = getTotalMeasurementCount() + 1
+        setTotalMeasurementCount(totalCount)
+
+        val tooCloseCount = getTooCloseMeasurementCount() + if (tooClose) 1 else 0
+        setTotalTooCloseMeasurementCount(tooCloseCount)
+
+        reporter(StatisticsEntry(totalCount, tooCloseCount))
+    }
+
+    fun postStatistics() {
+        val totalCount = getTotalMeasurementCount()
+        val tooCloseCount = getTooCloseMeasurementCount()
+        reporter(StatisticsEntry(totalCount, tooCloseCount))
     }
 }
 
 data class StatisticsEntry(
-    val count: Int,
+    val totalCount: Int,
     val tooCloseCount: Int
 )
 

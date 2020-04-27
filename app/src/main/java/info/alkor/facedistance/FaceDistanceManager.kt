@@ -19,13 +19,22 @@ class FaceDistanceManager(private val context: Context,
     private val faceDistanceAnalyzer by lazy { FaceDistanceAnalyzer(context) }
 
     fun startFaceDistanceAnalysis(distanceBetweenEyesMm: Float, faceToScreenDistanceThresholdMm: Float) {
-        if (faceDistanceAnalysisInProgress.compareAndSet(false, true)) {
-            postIsMeasuring(true)
-            pictureProvider.takePicture(isPortrait()) { bytes, params -> onPictureTaken(bytes, params, distanceBetweenEyesMm, faceToScreenDistanceThresholdMm) }
+        if (tryMarkProcessingStarted()) {
+            val pictureHandler = preparePictureHandler(
+                distanceBetweenEyesMm,
+                faceToScreenDistanceThresholdMm
+            )
+            if (!pictureProvider.takePicture(isPortrait(), pictureHandler)) {
+                // taking picture failed for some reason (most probably camera is used by another application)
+                markProcessingCompleted()
+            }
         } else {
             Log.e(tag, "Face distance analysis already in progress!")
         }
     }
+
+    private fun preparePictureHandler(distanceBetweenEyesMm: Float, faceToScreenDistanceThresholdMm: Float): CameraPictureCallback =
+        { bytes, params -> onPictureTaken(bytes, params, distanceBetweenEyesMm, faceToScreenDistanceThresholdMm) }
 
     private fun onPictureTaken(bytes: ByteArray, sensor: CameraParameters, distanceBetweenEyesMm: Float, faceToScreenDistanceThresholdMm: Float) {
         val faceDistanceMm = faceDistanceAnalyzer.computeFaceDistance(bytes, sensor, distanceBetweenEyesMm)
@@ -43,12 +52,24 @@ class FaceDistanceManager(private val context: Context,
         } else {
             Log.d(tag, "Unable to measure face-to-screen distance!")
         }
-        faceDistanceAnalysisInProgress.set(false)
-        postIsMeasuring(false)
+        markProcessingCompleted()
     }
 
     fun destroy() {
         faceDistanceAnalyzer.destroy()
+    }
+
+    private fun tryMarkProcessingStarted(): Boolean {
+        if (faceDistanceAnalysisInProgress.compareAndSet(false, true)) {
+            postIsMeasuring(true)
+            return true
+        }
+        return false
+    }
+
+    private fun markProcessingCompleted() {
+        faceDistanceAnalysisInProgress.set(false)
+        postIsMeasuring(false)
     }
 
     private fun isPortrait() = context.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT

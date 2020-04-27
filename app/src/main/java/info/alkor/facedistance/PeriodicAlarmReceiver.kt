@@ -11,15 +11,18 @@ class PeriodicAlarmReceiver : BroadcastReceiver() {
     private val tag = "alm"
 
     companion object {
-        fun prepareAlarmIntent(context: Context): PendingIntent {
+        private fun prepareAlarmIntent(context: Context, flag: Int): PendingIntent? {
             val intent = Intent(context, PeriodicAlarmReceiver::class.java)
             return PendingIntent.getBroadcast(
                 context,
                 12345,
                 intent,
-                PendingIntent.FLAG_UPDATE_CURRENT
+                flag
             )
         }
+
+        fun prepareAlarmIntent(context: Context) = prepareAlarmIntent(context, PendingIntent.FLAG_UPDATE_CURRENT)!!
+        fun isAlarmRegistered(context: Context) = null != prepareAlarmIntent(context, PendingIntent.FLAG_NO_CREATE)
     }
 
     override fun onReceive(context: Context, intent: Intent) {

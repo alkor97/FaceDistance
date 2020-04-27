@@ -11,4 +11,6 @@
     <string name="face_distance_threshold">Face distance threshold (mm)</string>
     <string name="measurement_period">Measurement period (seconds)</string>
     <string name="last_checked">Last checked</string>
+    <string name="stats_text">Too close to screen for %1$d%% of time (%2$d out of %3$d measurements).</string>
+    <string name="no_measurements_yet">No measurements yet.</string>
 </resources>

@@ -4,18 +4,14 @@ import android.app.AlarmManager
 import android.app.KeyguardManager
 import android.content.Context
 import android.util.Log
-import androidx.lifecycle.MutableLiveData
-import java.util.concurrent.atomic.AtomicBoolean
 
-class PeriodicAlarmManager(private val context: Context, private val scheduledStream: (Boolean) -> Unit) {
+class PeriodicAlarmManager(private val context: Context) {
 
     private val tag = "pam"
 
-    private val scheduled = AtomicBoolean(false)
-
     fun scheduleAlarm(timeout: Timeout) {
         if (isScreenNotLocked()) {
-            if (scheduled.compareAndSet(false, true)) {
+            if (!isAlarmScheduled()) {
                 val now = System.currentTimeMillis()
                 alarmManager().setRepeating(
                     AlarmManager.RTC_WAKEUP,
@@ -24,7 +20,9 @@ class PeriodicAlarmManager(private val context: Context, private val scheduledSt
                     PeriodicAlarmReceiver.prepareAlarmIntent(context)
                 )
                 Log.d(tag, "Alarm scheduled to be run every ${timeout.toSeconds()} seconds")
-                scheduledStream(true)
+                notifyAlarmScheduled(true)
+            } else {
+                Log.d(tag, "Alarm is already scheduled")
             }
         } else {
             Log.d(tag, "Screen is locked, do not schedule alarm")
@@ -32,15 +30,34 @@ class PeriodicAlarmManager(private val context: Context, private val scheduledSt
     }
 
     fun cancelAlarm() {
-        if (scheduled.compareAndSet(true, false)) {
+        if (isAlarmScheduled()) {
             alarmManager().cancel(PeriodicAlarmReceiver.prepareAlarmIntent(context))
             Log.d(tag, "Alarm cleared")
-            scheduledStream(false)
+            notifyAlarmScheduled(false)
+        } else {
+            Log.d(tag, "Alarm is already cancelled")
         }
     }
 
-    fun isAlarmScheduled() = scheduled.get()
+    fun onCreate() {
+        val storedState = state().isAlarmScheduled()
+        if (storedState != isAlarmScheduled()) {
+            Log.d(tag, "Alarm is not " + (if (storedState) "scheduled" else "cancelled") + ", fixing this...")
+            scheduleAlarm(storedState)
+        }
+    }
+
+    private fun scheduleAlarm(enable: Boolean) =
+        if (enable)
+            scheduleAlarm(appContext().settings.getMeasuringPeriod())
+        else
+            cancelAlarm()
 
     private fun isScreenNotLocked() = !(context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager).isDeviceLocked
     private fun alarmManager() = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    private fun appContext() = context.applicationContext as MyApplication
+    private fun isAlarmScheduled() = PeriodicAlarmReceiver.isAlarmRegistered(context)
+
+    private fun state() = appContext().state
+    private fun notifyAlarmScheduled(state: Boolean) = state().setAlarmScheduled(state)
 }

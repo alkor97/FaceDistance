@@ -3,59 +3,69 @@ package info.alkor.facedistance
 import android.app.Application
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import androidx.lifecycle.MutableLiveData
-import java.util.concurrent.TimeUnit
+import java.text.DateFormat
+import java.util.*
 
 class MyApplication : Application() {
-
-    companion object {
-        private const val tag = "app"
-    }
-
-    var distanceBetweenEyesMm = 60
-        set(value) {
-            field = value
-            Log.d(tag, "distance between eyes set to $value mm")
-        }
-    var distanceThresholdMm = 300
-        set(value) {
-            field = value
-            Log.d(tag, "distance threshold set to $value mm")
-        }
-    var measuringPeriod = Timeout(30, TimeUnit.SECONDS)
-        set(value) {
-            field = value
-            Log.d(tag, "measuring period set to ${value.toSeconds()} seconds")
-        }
 
     val userObserverEnabled = MutableLiveData<Boolean>()
     val alarmEnabled = MutableLiveData<Boolean>()
     val faceDistance = MutableLiveData<Int>()
+    val timeOfLastMeasurement = MutableLiveData<String>()
     val isMeasuring = MutableLiveData<Boolean>()
     val statistics = MutableLiveData<StatisticsEntry>()
 
-    private val userStatusReceiver = UserStatusReceiver { userObserverEnabled.postValue(it) }
-    private val alarmManager = PeriodicAlarmManager(this) { alarmEnabled.postValue(it) }
+    private val userStatusReceiver = UserStatusReceiver()
+    private val alarmManager = PeriodicAlarmManager(this)
+    private val stats = Statistics(this) { statistics.postValue(it) }
     private val faceDistanceManager = FaceDistanceManager(this,
-        { faceDistance.postValue(it) },
+        this::onFaceDistanceMeasured,
         { isMeasuring.postValue(it) },
-        Statistics { statistics.postValue(it) }
+        stats
     )
-
+    val state = State(this)
+    val settings = Settings(this)
     private val handler = Handler(Looper.getMainLooper())
 
-    fun registerUserStatusReceiver() = userStatusReceiver.register(applicationContext)
-    fun unregisterUserStatusReceiver() = userStatusReceiver.unregister(applicationContext)
-    fun isUserStatusReceiverRegistered() = userStatusReceiver.isRegistered()
+    override fun onCreate() {
+        super.onCreate()
+        state.setLastFaceDistanceChangeListener { faceDistance.postValue(it) }
+        state.setTimeOfLastMeasurementChangeListener { timeOfLastMeasurement.postValue(it) }
+        state.setAlarmScheduledChangeListener { alarmEnabled.postValue(it) }
+        state.setUserObserverEnabledChangeListener { userObserverEnabled.postValue(it) }
 
-    fun scheduleAlarm() = alarmManager.scheduleAlarm(measuringPeriod)
+        alarmManager.onCreate()
+    }
+
+    fun registerUserStatusReceiver(enable: Boolean) = userStatusReceiver.register(applicationContext, enable)
+
+    fun scheduleAlarm() = alarmManager.scheduleAlarm(settings.getMeasuringPeriod())
     fun cancelAlarm() = alarmManager.cancelAlarm()
-    fun isAlarmScheduled() = alarmManager.isAlarmScheduled()
 
     fun startFaceDistanceAnalysis() = runInMainThread {
-        faceDistanceManager.startFaceDistanceAnalysis(distanceBetweenEyesMm.toFloat(), distanceThresholdMm.toFloat())
+        faceDistanceManager.startFaceDistanceAnalysis(
+            settings.getDistanceBetweenEyes().toFloat(),
+            settings.getDistanceThreshold().toFloat()
+        )
+    }
+
+    fun postState() {
+        userObserverEnabled.postValue(state.isUserObserverEnabled())
+        alarmEnabled.postValue(state.isAlarmScheduled())
+        timeOfLastMeasurement.postValue(state.getTimeOfLastMeasurement())
+        faceDistance.postValue(state.getLastFaceDistance())
+        stats.postStatistics()
+    }
+
+    fun logStorage() {
+        state.logContent()
+        stats.logContent()
     }
 
     private fun runInMainThread(task: () -> Unit) = handler.post { task() }
+    private fun onFaceDistanceMeasured(distance: Int) {
+        state.setLastFaceDistance(distance)
+        state.setTimeOfLastMeasurement(DateFormat.getTimeInstance().format(Date()))
+    }
 }

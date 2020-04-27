@@ -53,7 +53,6 @@ class FrontCameraPictureProvider {
                 return false
             }
         } else {
-            Log.e(tag, "No front-facing camera found!")
             return false
         }
     }
@@ -90,9 +89,15 @@ class FrontCameraPictureProvider {
             Camera.getCameraInfo(i, info)
             if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
                 Log.d(tag, "Front-facing camera found.")
-                return Camera.open(i)
+                try {
+                    return Camera.open(i)
+                } catch (e: RuntimeException) {
+                    Log.e(tag, "Cannot open camera")
+                    return null
+                }
             }
         }
+        Log.e(tag, "No front-facing camera found!")
         return null
     }
 

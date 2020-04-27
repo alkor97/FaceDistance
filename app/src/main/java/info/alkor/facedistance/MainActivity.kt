@@ -16,8 +16,6 @@ import androidx.core.app.ActivityCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import com.google.android.material.snackbar.Snackbar
-import java.text.DateFormat
-import java.util.*
 import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
@@ -48,37 +46,40 @@ class MainActivity : AppCompatActivity() {
         alarmEnabledSwitch.setOnCheckedChangeListener { _, isChecked -> enableAlarm(isChecked) }
 
         installObserver(appContext().userObserverEnabled) { listenerRegisteredSwitch.isChecked = it }
-        installObserver(appContext().faceDistance) {
-            faceDistanceText.text = resources.getString(R.string.face_distance_is, it)
-            lastCheckedEdit.setText(DateFormat.getTimeInstance().format(Date()))
-        }
+        installObserver(appContext().faceDistance) { faceDistanceText.text = resources.getString(R.string.face_distance_is, it) }
+        installObserver(appContext().timeOfLastMeasurement) { lastCheckedEdit.setText(it) }
         installObserver(appContext().isMeasuring) { measuringProgress.visibility = if (it) View.VISIBLE else View.INVISIBLE }
         appContext().isMeasuring.postValue(false)
 
-        setupOnIntChanged(distanceBetweenEyesEdit) { appContext().distanceBetweenEyesMm = it }
-        initIntEditor(distanceBetweenEyesEdit) { appContext().distanceBetweenEyesMm }
+        setupOnIntChanged(distanceBetweenEyesEdit) { settings().setDistanceBetweenEyes(it) }
+        initIntEditor(distanceBetweenEyesEdit) { settings().getDistanceBetweenEyes() }
 
-        setupOnIntChanged(distanceThresholdEdit) { appContext().distanceThresholdMm = it }
-        initIntEditor(distanceThresholdEdit) { appContext().distanceThresholdMm }
+        setupOnIntChanged(distanceThresholdEdit) { settings().setDistanceThreshold(it) }
+        initIntEditor(distanceThresholdEdit) { settings().getDistanceThreshold() }
 
-        setupOnIntChanged(measurementPeriodEdit) { appContext().measuringPeriod = Timeout(it.toLong(), TimeUnit.SECONDS) }
-        initIntEditor(measurementPeriodEdit) { appContext().measuringPeriod.toSeconds().toInt() }
+        setupOnIntChanged(measurementPeriodEdit) { settings().setMeasuringPeriod(Timeout(it.toLong(), TimeUnit.SECONDS)) }
+        initIntEditor(measurementPeriodEdit) { settings().getMeasuringPeriod().toSeconds().toInt() }
 
-        installObserver(appContext().statistics) {
-            statisticsText.text = String.format(
-                "Too close to screen for %d%% of time (%d out of %d measurements).",
-                100 * it.tooCloseCount / it.count, it.tooCloseCount, it.count
+        installObserver(appContext().statistics) { updateStatistics(it) }
+
+        appContext().postState()
+        appContext().logStorage()
+    }
+
+    private fun updateStatistics(entry: StatisticsEntry) {
+        if (entry.totalCount != 0) {
+            statisticsText.text = resources.getString(
+                R.string.stats_text,
+                100 * entry.tooCloseCount / entry.totalCount,
+                entry.tooCloseCount,
+                entry.totalCount
             )
+        } else {
+            statisticsText.text = resources.getString(R.string.no_measurements_yet)
         }
     }
 
-    private fun registerUserStatusReceiver(enable: Boolean) {
-        if (enable) {
-            appContext().registerUserStatusReceiver()
-        } else {
-            appContext().unregisterUserStatusReceiver()
-        }
-    }
+    private fun registerUserStatusReceiver(enable: Boolean) = appContext().registerUserStatusReceiver(enable)
 
     private fun enableAlarm(enable: Boolean) {
         if (enable) {
@@ -147,4 +148,5 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun appContext() = application as MyApplication
+    private fun settings() = appContext().settings
 }
