@@ -7,7 +7,7 @@ import android.util.Log
 import java.util.concurrent.atomic.AtomicBoolean
 
 class FaceDistanceManager(private val context: Context,
-                          private val postFaceDistance: (Int) -> Unit,
+                          private val postFaceDistance: (FaceDistance) -> Unit,
                           private val postIsMeasuring: (Boolean) -> Unit,
                           private val statistics: Statistics
 ) {
@@ -27,9 +27,11 @@ class FaceDistanceManager(private val context: Context,
             if (!pictureProvider.takePicture(isPortrait(), pictureHandler)) {
                 // taking picture failed for some reason (most probably camera is used by another application)
                 markProcessingCompleted()
+                postFaceDistance(Failure(Error.CAMERA_BUSY))
             }
         } else {
             Log.e(tag, "Face distance analysis already in progress!")
+            postFaceDistance(Failure(Error.ALREADY_IN_PROGRESS))
         }
     }
 
@@ -40,17 +42,18 @@ class FaceDistanceManager(private val context: Context,
         val faceDistanceMm = faceDistanceAnalyzer.computeFaceDistance(bytes, sensor, distanceBetweenEyesMm)
         if (faceDistanceMm != null) {
             Log.d(tag, "distance to face is $faceDistanceMm mm")
-            postFaceDistance(faceDistanceMm.toInt())
+            postFaceDistance(Success(faceDistanceMm.toInt()))
 
             if (faceDistanceMm < faceToScreenDistanceThresholdMm) {
+                statistics.measurementTaken(true)
                 Log.w(tag, "Your face is too close to screen! Move away!")
                 vibrator.vibrate(longArrayOf(0, 250, 100, 250, 100, 250, 100, 250, 100, 250, 100), -1)
-                statistics.measurementTaken(true)
             } else {
                 statistics.measurementTaken(false)
             }
         } else {
             Log.d(tag, "Unable to measure face-to-screen distance!")
+            postFaceDistance(Failure(Error.NO_FACES_DETECTED))
         }
         markProcessingCompleted()
     }

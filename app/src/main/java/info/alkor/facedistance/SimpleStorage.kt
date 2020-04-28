@@ -88,4 +88,8 @@ abstract class SimpleStorage(private val context: Context, private val storageNa
         }
         Log.d(tag, sb.toString())
     }
+
+    fun clear() {
+        sharedPrefs().edit().clear().commit()
+    }
 }

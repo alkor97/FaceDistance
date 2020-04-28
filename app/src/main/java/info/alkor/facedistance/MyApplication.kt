@@ -64,8 +64,16 @@ class MyApplication : Application() {
     }
 
     private fun runInMainThread(task: () -> Unit) = handler.post { task() }
-    private fun onFaceDistanceMeasured(distance: Int) {
-        state.setLastFaceDistance(distance)
+    private fun onFaceDistanceMeasured(distance: FaceDistance) {
+        if (distance is Success) {
+            state.setLastFaceDistance(distance.value)
+        } else if (distance is Failure) {
+            stats.measurementFailed(distance.error)
+        }
+        postTImestamp()
+    }
+
+    private fun postTImestamp() {
         state.setTimeOfLastMeasurement(DateFormat.getTimeInstance().format(Date()))
     }
 }

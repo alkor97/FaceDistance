@@ -66,13 +66,22 @@ class MainActivity : AppCompatActivity() {
         appContext().logStorage()
     }
 
+    private fun formatErrorStatistics(entry: StatisticsEntry): String {
+        val sb = StringBuilder()
+        for (error in entry.errors) {
+            sb.append(", ${error.key.keyCount()}=${error.value}")
+        }
+        return sb.toString()
+    }
+
     private fun updateStatistics(entry: StatisticsEntry) {
         if (entry.totalCount != 0) {
             statisticsText.text = resources.getString(
                 R.string.stats_text,
                 100 * entry.tooCloseCount / entry.totalCount,
                 entry.tooCloseCount,
-                entry.totalCount
+                entry.totalCount,
+                formatErrorStatistics(entry)
             )
         } else {
             statisticsText.text = resources.getString(R.string.no_measurements_yet)

@@ -1,6 +1,7 @@
 package info.alkor.facedistance
 
 import android.content.Context
+import java.util.*
 
 class Statistics(context: Context, private val reporter: StatisticsReporter) : SimpleStorage(context, "statistics") {
 
@@ -22,19 +23,38 @@ class Statistics(context: Context, private val reporter: StatisticsReporter) : S
         val tooCloseCount = getTooCloseMeasurementCount() + if (tooClose) 1 else 0
         setTotalTooCloseMeasurementCount(tooCloseCount)
 
-        reporter(StatisticsEntry(totalCount, tooCloseCount))
+        postStatistics()
+    }
+
+    fun getErrorCount(error: Error) = readInt(error.keyCount(), 0)
+    fun setErrorCount(error: Error, value: Int) = writeInt(error.keyCount(), value)
+
+    fun measurementFailed(error: Error) {
+        val count = getErrorCount(error) + 1
+        setErrorCount(error, count)
+        postStatistics()
+    }
+
+    private fun getErrorMap(): Map<Error, Int> {
+        val map = EnumMap<Error, Int>(Error::class.java)
+        for (error in Error.values()) {
+            val count = getErrorCount(error)
+            if (count > 0) {
+                map[error] = getErrorCount(error)
+            }
+        }
+        return map
     }
 
     fun postStatistics() {
-        val totalCount = getTotalMeasurementCount()
-        val tooCloseCount = getTooCloseMeasurementCount()
-        reporter(StatisticsEntry(totalCount, tooCloseCount))
+        reporter(StatisticsEntry(getTotalMeasurementCount(), getTooCloseMeasurementCount(), getErrorMap()))
     }
 }
 
 data class StatisticsEntry(
     val totalCount: Int,
-    val tooCloseCount: Int
+    val tooCloseCount: Int,
+    val errors: Map<Error, Int>
 )
 
 typealias StatisticsReporter = (StatisticsEntry) -> Unit
